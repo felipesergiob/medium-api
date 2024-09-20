@@ -6,7 +6,7 @@ class PostService {
 		return Post.create(post);
 	}
 
-    getPostbyId (filter) {
+    read (filter) {
 		const scopes = [];
 		if (filter.logged_user_id) {
 			scopes.push({
@@ -39,7 +39,7 @@ class PostService {
 		});
 	}
 
-	updatePost({ changes, filter }) {
+	update({ changes, filter }) {
 		return Post.update(changes, {
 			where: {
 				user_id: filter.logged_user_id,
@@ -49,7 +49,7 @@ class PostService {
 		});
 	}
 
-	deletePost(filter) {
+	delete(filter) {
 		return Post.update(
 			{ is_deleted: true },
 			{
@@ -61,7 +61,7 @@ class PostService {
 		);
 	}
 
-	async getAllPosts({ filter, meta }) {
+	async list({ filter, meta }) {
 		const promises = [];
 		const scopes = [];
 		const Pagination = PaginationUtils.config({
@@ -106,7 +106,7 @@ class PostService {
 		};
 	}
 
-	async likePost({ filter }) {
+	async like({ filter }) {
 		const transaction = await Post.sequelize.transaction();
 		try {
 			const post = await Post.findOne({
@@ -158,7 +158,7 @@ class PostService {
 		}
 	}
 
-	async dislikePost({ filter }) {
+	async dislike({ filter }) {
 		const transaction = await Post.sequelize.transaction();
 		try {
 			const post = await Post.findOne({

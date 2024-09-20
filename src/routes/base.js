@@ -3,7 +3,7 @@ import SchemaValidator from '../utils/schema-validator';
 
 class BaseRoutes {
 	constructor() {
-		this.router = new Router();
+		this.router = Router();
 		this.SchemaValidator = SchemaValidator;
 	}
 }

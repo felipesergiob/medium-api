@@ -1,6 +1,6 @@
 import { User } from "../models/index";
 import { AuthUtils } from "@utils";
-import ExceptionUtils from "@utils/ExceptionUtils";
+import ExceptionUtils from "@utils";
 import bcrypt from "bcrypt";
 import { pick } from "lodash";
 
