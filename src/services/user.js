@@ -5,8 +5,8 @@ import bcrypt from "bcrypt";
 import { pick } from "lodash";
 
 class UserService {
-  async createUser(userData) {
-    const { email, password, name } = userData;
+  async create(userData) {
+     const { email, password, name } = userData;
 
     const existingUser = await User.findOne({
       where: { email, is_deleted: false }
@@ -32,10 +32,6 @@ class UserService {
       where: { email, is_deleted: false }
     });
 
-    if (!user) {
-      throw new ExceptionUtils("User not found");
-    }
-
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -45,65 +41,62 @@ class UserService {
     return AuthUtils.generateToken({ id: user.id, email: user.email });
   }
 
-  async updateProfile({ userId, changes }) {
-    const user = await User.findOne({
-      where: { id: userId, is_deleted: false }
-    });
-
-    if (!user) {
-      throw new ExceptionUtils("User not found");
-    }
-
-    const updatedUser = await user.update(pick(changes, ["name", "email"]));
-
-    return pick(updatedUser, ["id", "name", "email", "updated_at"]);
-  }
+  async update({ userId, changes }) {
+    const user = await User.findOne({ where: { id: userId, is_deleted: false } });
+  
+    await User.update(
+      pick(changes, ["name", "email"]),
+      { where: { id: userId, is_deleted: false } }
+    );
+  
+    return pick(user, ["id", "name", "email", "updated_at"]);
+  }  
+  
 
   async changePassword({ userId, oldPassword, newPassword }) {
     const user = await User.findOne({
       where: { id: userId, is_deleted: false }
     });
-
-    if (!user) {
-      throw new ExceptionUtils("User not found");
-    }
-
+  
     const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
-
+  
     if (!isOldPasswordValid) {
-      throw new ExceptionUtils("Old password is incorrect");
+      return false;
     }
-
+  
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-    await user.update({ password: hashedNewPassword });
-
-    return { message: "Password changed successfully" };
+  
+    await User.update({ password: hashedNewPassword }, { where: { id: userId } });
+  
+    return true; 
   }
+  
 
-  async deleteUser(userId) {
+  async delete(userId) {
+    console.log(userId);
+
     const user = await User.findOne({
-      where: { id: userId, is_deleted: false }
+      where: { id: userId.id, is_deleted: false }
     });
 
-    if (!user) {
-      throw new ExceptionUtils("User not found");
-    }
+    console.log(user);
+    
+    const changes = {
+      is_deleted: true
+    };
 
-    await user.update({ is_deleted: true });
+    await User.update(changes, {
+      where: { id: user.id, is_deleted: false }
+    });
 
     return { message: "User deleted successfully" };
   }
 
-  async getUserProfile(userId) {
+  async read(userId) {
     const user = await User.findOne({
       where: { id: userId, is_deleted: false },
       attributes: ["id", "name", "email", "created_at"]
     });
-
-    if (!user) {
-      throw new ExceptionUtils("User not found");
-    }
 
     return user;
   }
