@@ -1,105 +1,145 @@
 import { User } from "../models/index";
-import { AuthUtils } from "@utils";
-import ExceptionUtils from "@utils";
-import bcrypt from "bcrypt";
 import { pick } from "lodash";
+import bcrypt from "bcrypt";
+import ExceptionUtils from "@utils";
+import { AuthUtils } from "@utils";
 
 class UserService {
-  async create(userData) {
-     const { email, password, name } = userData;
+	async create(user) {
+		const transaction = await User.sequelize.transaction();
 
-    const existingUser = await User.findOne({
-      where: { email, is_deleted: false }
-    });
+		try {
+			user.password = await bcrypt.hash(user.password, 6);
 
-    if (existingUser) {
-      throw new ExceptionUtils("Email already registered");
-    }
+			const userCreated = await User.create(user, { transaction });
 
-    const hashedPassword = await bcrypt.hash(password, 6);
+			await transaction.commit();
 
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword
-    });
+			return pick(userCreated, ["id", "name", "email", "created_at"]);
+		} catch (error) {
+			await transaction.rollback();
+			throw error;
+		}
+	}
 
-    return pick(user, ["id", "name", "email", "created_at"]);
-  }
+	async login(data) {
+		const { email, password } = data;
 
-  async authenticate({ email, password }) {
-    const user = await User.findOne({
-      where: { email, is_deleted: false }
-    });
+		const user = await User.findOne({
+			where: { email, is_deleted: false },
+			attributes: ["id", "email", "password"],
+			raw: false,
+		});
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+		if (!user || !this.isValidPassword(password, user.password)) {
+			throw new ExceptionUtils("NOT_FOUND");
+		}
 
-    if (!isPasswordValid) {
-      throw new ExceptionUtils("Invalid password");
-    }
+		const token = AuthUtils.generateToken({ id: user.id });
 
-    return AuthUtils.generateToken({ id: user.id, email: user.email });
-  }
+		return { user: pick(user, ["id", "email", "name"]), token };
+	}
 
-  async update({ userId, changes }) {
-    const user = await User.findOne({ where: { id: userId, is_deleted: false } });
-  
-    await User.update(
-      pick(changes, ["name", "email"]),
-      { where: { id: userId, is_deleted: false } }
-    );
-  
-    return pick(user, ["id", "name", "email", "updated_at"]);
-  }  
-  
+	async read(id) {
+		const user = await User.findOne({
+			where: { id, is_deleted: false },
+			attributes: ["id", "name", "email", "created_at"],
+			raw: false,
+		});
 
-  async changePassword({ userId, oldPassword, newPassword }) {
-    const user = await User.findOne({
-      where: { id: userId, is_deleted: false }
-    });
-  
-    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
-  
-    if (!isOldPasswordValid) {
-      return false;
-    }
-  
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-  
-    await User.update({ password: hashedNewPassword }, { where: { id: userId } });
-  
-    return true; 
-  }
-  
+		if (!user) {
+			throw new ExceptionUtils("NOT_FOUND");
+		}
 
-  async delete(userId) {
-    console.log(userId);
+		return pick(user, ["id", "name", "email", "created_at"]);
+	}
 
-    const user = await User.findOne({
-      where: { id: userId.id, is_deleted: false }
-    });
+	async update({ changes, filter }) {
+		const transaction = await User.sequelize.transaction();
 
-    console.log(user);
-    
-    const changes = {
-      is_deleted: true
-    };
+		try {
+			if (changes.password) {
+				changes.password = await bcrypt.hash(changes.password, 10);
+			}
 
-    await User.update(changes, {
-      where: { id: user.id, is_deleted: false }
-    });
+			const [_, userUpdated] = await User.update(changes, {
+				where: { ...filter, is_deleted: false },
+				transaction,
+				returning: true,
+			});
 
-    return { message: "User deleted successfully" };
-  }
+			await transaction.commit();
 
-  async read(userId) {
-    const user = await User.findOne({
-      where: { id: userId, is_deleted: false },
-      attributes: ["id", "name", "email", "created_at"]
-    });
+			return pick(userUpdated[0], ["id", "name", "email", "updated_at"]);
+		} catch (error) {
+			await transaction.rollback();
+			throw error;
+		}
+	}
 
-    return user;
-  }
+	async delete(filter) {
+		const transaction = await User.sequelize.transaction();
+
+		try {
+			const userDeleted = await User.update(
+				{ is_deleted: true },
+				{
+					where: { ...filter, is_deleted: false },
+					transaction,
+				}
+			);
+
+			await transaction.commit();
+
+			return userDeleted;
+		} catch (error) {
+			await transaction.rollback();
+			throw error;
+		}
+	}
+
+	async updatePassword({ userId, oldPassword, newPassword }) {
+		const transaction = await User.sequelize.transaction();
+
+		try {
+			const user = await User.findOne({
+				where: { 
+					id: userId, is_deleted: false 
+				},
+				attributes: ["id", "password"],
+				raw: false,
+			});
+
+			if (!user) {
+				throw new ExceptionUtils("NOT_FOUND");
+			}
+
+			const isOldPasswordValid = this.isValidPassword(oldPassword, user.password);
+
+			if (!isOldPasswordValid) {
+				return false;
+			}
+
+			const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+			await User.update({ 
+				password: hashedNewPassword 
+			},
+				{ where: { id: userId }, transaction }
+			);
+
+			await transaction.commit();
+
+			return true;
+		} catch (error) {
+			await transaction.rollback();
+			throw error;
+		}
+	}
+
+	isValidPassword(password, hashedPassword) {
+		return bcrypt.compareSync(password, hashedPassword);
+	}
 }
 
 export default UserService;

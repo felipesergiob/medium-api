@@ -1,76 +1,119 @@
 import BaseController from "./base";
-import { PostService } from "@services";
+import { PostService } from "../services";
 
 class PostController extends BaseController {
-  
+
+  constructor() {
+    super();
+    this.postService = new PostService();
+  }
+
   async list(req, res) {
+    const options = {
+      meta: {
+        ...req.query
+      },
+      filter: {
+        ...req.auth
+      }
+    };
+
     try {
-      const posts = await PostService.list(req.query);
+      const posts = await this.postService.list(options);
       return res.json(posts);
     } catch (error) {
-      return this.handleError(res, error);
+      return this.errorHandler(error, req, res);
     }
   }
 
   async create(req, res) {
     try {
-      const { title, content, user_id } = req.body;
-      const newPost = await PostService.create({ title, content, user_id });
-      return res.status(201).json(newPost);
+      const { id } = req.auth;
+      const { title, content } = req.body;
+  
+      const newPost = await this.postService.create({ title, content, user_id: id });
+      return res.status(201).json({ newPost });
     } catch (error) {
-      return this.handleError(res, error);
+      return this.errorHandler(error, req, res);
     }
   }
+  
 
   async update(req, res) {
+    const options = {
+      filter: {
+        id: req.params.id,
+        logged_user_id: req.auth.id
+      },
+      changes: {
+        title: req.body.title,
+        content: req.body.content
+      }
+    };
+
     try {
-      const { id } = req.params;
-      const { title, content } = req.body;
-      const updatedPost = await PostService.update({ id, title, content });
+      const updatedPost = await this.postService.update(options);
       return res.json(updatedPost);
     } catch (error) {
-      return this.handleError(res, error);
+      return this.errorHandler(error, req, res);
     }
   }
 
-  async delete(req, res) {
+  async delete(req, res) {  
+    const options = {
+      filter: {
+        id: req.params.id
+      }
+    };
+
     try {
-      const { id } = req.params;
-      await PostService.delete({ id });
+      await this.postService.delete(options);
       return res.status(204).send();
     } catch (error) {
-      return this.handleError(res, error);
+      return this.errorHandler(error, req, res);
     }
   }
 
   async read(req, res) {
     try {
       const { id } = req.params;
-      const post = await PostService.read({ id });
+      const post = await this.postService.read({ id });
       if (!post) return res.status(404).json({ message: "Post not found" });
       return res.json(post);
     } catch (error) {
-      return this.handleError(res, error);
+      return this.errorHandler(error, req, res);
     }
   }
 
   async like(req, res) {
+    const options = {
+      filter: {
+        post_id: req.body.post_id,
+        logged_user_id: req.auth.id
+      }
+    };
+
     try {
-      const { post_id, user_id } = req.body;
-      const post = await PostService.like({ post_id, user_id });
+      const post = await this.postService.like(options);
       return res.json(post);
     } catch (error) {
-      return this.handleError(res, error);
+      return this.errorHandler(error, req, res);
     }
   }
 
   async dislike(req, res) {
+    const options = {
+      filter: {
+        post_id: req.body.post_id,
+        logged_user_id: req.auth.id
+      }
+    };
+
     try {
-      const { post_id, user_id } = req.body;
-      const post = await PostService.dislike({ post_id, user_id });
+      const post = await this.postService.dislike(options);
       return res.json(post);
     } catch (error) {
-      return this.handleError(res, error);
+      return this.errorHandler(error, req, res);
     }
   }
 }

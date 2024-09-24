@@ -1,4 +1,4 @@
-import { PostController } from "@controllers";
+import { PostController } from "../controllers";
 import BaseRoutes from "./base";
 
 export default class PostRoutes extends BaseRoutes {

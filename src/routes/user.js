@@ -10,9 +10,9 @@ export default class UserRoutes extends BaseRoutes {
 
 	setup() {
 		this.router.post("/create", this.userController.create.bind(this.userController));
-		this.router.post("/login", this.userController.authenticate.bind(this.userController));		
-		this.router.put("/profile/update", AuthMiddleware.isAuthorized, this.userController.update.bind(this.userController)); 
-		this.router.put("/password/change", AuthMiddleware.isAuthorized, this.userController.changePassword.bind(this.userController));
+		this.router.post("/login", this.userController.login.bind(this.userController));		
+		this.router.put("/update", AuthMiddleware.isAuthorized, this.userController.update.bind(this.userController)); 
+		this.router.put("/update/pass", AuthMiddleware.isAuthorized, this.userController.updatePassword.bind(this.userController));
 		this.router.delete("/delete/:id", AuthMiddleware.isAuthorized, this.userController.delete.bind(this.userController));
 		this.router.get("/profile/:id", AuthMiddleware.isAuthorized, this.userController.read.bind(this.userController));
 

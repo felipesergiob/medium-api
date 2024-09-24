@@ -50,9 +50,8 @@ export default class Post extends BaseModel {
 									FROM post_likes
 									WHERE post_likes.post_id = post.id
 									AND post_likes.user_id = :user_id
-									AND post_likes.deleted_at is NULL
 								) is not null THEN true ELSE false END`
-						), "is_liked",
+						), "total_likes",
 					],
 					replacements: { user_id: id }
 				})

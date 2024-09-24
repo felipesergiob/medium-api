@@ -18,10 +18,10 @@ class UserController extends BaseController {
     }
   }
 
-  async authenticate(req, res) {
+  async login(req, res) {
     try {
       const { email, password } = req.body;
-      const token = await this.userService.authenticate({ email, password });
+      const token = await this.userService.login({ email, password });
       if (!token) return res.status(401).json({ message: "Invalid credentials" });
       return res.json({ token });
     } catch (error) {
@@ -40,7 +40,7 @@ class UserController extends BaseController {
     }
   }
 
-  async changePassword(req, res) {
+  async updatePassword(req, res) {
     try {
       const { id } = req.auth; 
       const { currentPassword, newPassword } = req.body;
@@ -49,7 +49,7 @@ class UserController extends BaseController {
         return res.status(400).json({ message: "User ID not found in the request" });
       }
 
-      const result = await this.userService.changePassword({ userId: id, oldPassword: currentPassword, newPassword });
+      const result = await this.userService.updatePassword({ userId: id, oldPassword: currentPassword, newPassword });
       if (!result) {
         return res.status(400).json({ message: "Incorrect current password" });
       }

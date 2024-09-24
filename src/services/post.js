@@ -6,15 +6,16 @@ class PostService {
 		return Post.create(post);
 	}
 
-    read (filter) {
+    read (filter) {		
 		const scopes = [];
-		if (filter.logged_user_id) {
+		
+		if (filter.id) {
 			scopes.push({
-				name: "withUserLike",
-				options: filter.logged_user_id,
+				name: "liked",
+				options: filter.id,
 			});
 		}
-
+		
 		return Post.scope(scopes).findOne({
 			where: {
 				id: filter.id,
@@ -39,7 +40,7 @@ class PostService {
 		});
 	}
 
-	update({ changes, filter }) {
+	update({ changes, filter }) {		
 		return Post.update(changes, {
 			where: {
 				user_id: filter.logged_user_id,
@@ -49,17 +50,20 @@ class PostService {
 		});
 	}
 
-	delete(filter) {
+	delete(filter) {	
+		const postId = filter?.filter?.id;
+	
 		return Post.update(
 			{ is_deleted: true },
 			{
 				where: {
-					id: filter.id,
+					id: postId, 
 					is_deleted: false,
 				},
 			}
 		);
 	}
+	
 
 	async list({ filter, meta }) {
 		const promises = [];
@@ -74,7 +78,7 @@ class PostService {
 				options: filter.logged_user_id,
 			});
 		}
-
+	
 		promises.push(
 			Post.scope(scopes).findAll({
 				...Pagination.getQueryParams(),
@@ -91,15 +95,22 @@ class PostService {
 					is_deleted: false, 
 				},
 				order: [["created_at", "DESC"]],
+				include: [
+					{
+						model: User,
+						as: "user",
+						attributes: ["email", "name"],
+					},
+				],
 			})
 		);
-
+	
 		if (Pagination.getPage() === 1) {
 			promises.push(Post.count({ where: { is_deleted: false } }));
 		}
-
+	
 		const [posts, totalItems] = await Promise.all(promises);
-
+	
 		return {
 			...Pagination.mount(totalItems),
 			posts,
@@ -112,28 +123,28 @@ class PostService {
 			const post = await Post.findOne({
 				where: {
 					id: filter.post_id,
-					is_deleted: false, 
+					is_deleted: false,
 				},
 				transaction,
 			});
-
+	
 			if (!post) {
 				throw new Error("Post not found");
 			}
-
+	
 			const hasLike = await PostLike.findOne({
 				where: {
 					post_id: filter.post_id,
 					user_id: filter.logged_user_id,
-					is_deleted: false, 
+					is_deleted: false,
 				},
 				transaction,
 			});
-
+	
 			if (hasLike) {
 				throw new Error("Post already liked");
 			}
-
+	
 			await PostLike.create(
 				{
 					post_id: filter.post_id,
@@ -141,7 +152,7 @@ class PostService {
 				},
 				{ transaction }
 			);
-
+	
 			await Post.increment("total_likes", {
 				where: {
 					id: filter.post_id,
@@ -149,7 +160,7 @@ class PostService {
 				by: 1,
 				transaction,
 			});
-
+	
 			await transaction.commit();
 			return post;
 		} catch (error) {
@@ -157,7 +168,7 @@ class PostService {
 			throw error;
 		}
 	}
-
+	
 	async dislike({ filter }) {
 		const transaction = await Post.sequelize.transaction();
 		try {
