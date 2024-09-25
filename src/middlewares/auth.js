@@ -29,7 +29,6 @@ export default class AuthMiddleware {
 
 			next();
 		} catch (error) {
-			console.error(error);
 			res.status(403).json({
 				status: "error",
 				code: 403,

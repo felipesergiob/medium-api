@@ -20,10 +20,8 @@ class PostController extends BaseController {
 
     try {      
       const posts = await this.postService.list(options);
-      return res.json(posts);
-    } catch (error) {
-      console.log(error);
-      
+      return this.successHandler(posts, res);
+    } catch (error) {      
       return this.errorHandler(error, req, res);
     }
   }
@@ -34,7 +32,7 @@ class PostController extends BaseController {
       const { title, content } = req.data;
 
       const newPost = await this.postService.create({ title, content, user_id: id });
-      return res.status(201).json({ newPost });
+      return this.successHandler({ newPost }, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
@@ -53,7 +51,7 @@ class PostController extends BaseController {
 
     try {
       const updatedPost = await this.postService.update(options);
-      return res.json(updatedPost);
+      return this.successHandler(updatedPost, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
@@ -75,15 +73,15 @@ class PostController extends BaseController {
   }
 
   async read(req, res) {
-      const filter =  {
-        logged_user_id: req.auth.id,
-        post_id: req.filter.id,
-      };
+    const filter = {
+      logged_user_id: req.auth.id,
+      post_id: req.filter.id,
+    };
     
     try {      
       const post = await this.postService.read(filter);
       if (!post) return res.status(404).json({ message: "Post not found" });
-      return res.json(post);
+      return this.successHandler(post, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
@@ -99,7 +97,7 @@ class PostController extends BaseController {
     
     try {      
       const post = await this.postService.like(options);
-      return res.json(post);
+      return this.successHandler(post, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
@@ -115,7 +113,7 @@ class PostController extends BaseController {
 
     try {
       const post = await this.postService.dislike(options);
-      return res.json(post);
+      return this.successHandler(post, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }

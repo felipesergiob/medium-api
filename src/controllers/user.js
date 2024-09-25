@@ -1,6 +1,5 @@
 import BaseController from "./base";
 import { UserService } from "../services";
-import { cls } from "sequelize";
 
 class UserController extends BaseController {
   constructor() {
@@ -12,7 +11,7 @@ class UserController extends BaseController {
     try {
       const { name, email, password } = req.data;
       const newUser = await this.userService.create({ name, email, password });
-      return res.status(201).json(newUser);
+      return this.successHandler(newUser, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
@@ -23,7 +22,7 @@ class UserController extends BaseController {
       const { email, password } = req.data;
       const token = await this.userService.login({ email, password });
       if (!token) return res.status(401).json({ message: "Invalid credentials" });
-      return res.json({ token });
+      return this.successHandler({ token }, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
@@ -32,11 +31,9 @@ class UserController extends BaseController {
   async update(req, res) {
     try {
       const { id } = req.auth;
-      
       const { name, email } = req.data;
-      
       const updatedUser = await this.userService.update({ userId: id, changes: { name, email } });
-      return res.json(updatedUser);
+      return this.successHandler(updatedUser, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
@@ -76,7 +73,7 @@ class UserController extends BaseController {
       const { id } = req.params;
       const user = await this.userService.read(id);
       if (!user) return res.status(404).json({ message: "User not found" });
-      return res.json(user);
+      return this.successHandler(user, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
