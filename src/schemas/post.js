@@ -37,8 +37,20 @@ const schema = {
 			})
 			.noUnknown(),
 	},
-	like: {},  
-	dislike: {},  
+	like: {
+		body: yup
+			.object({
+				post_id: yup.number().required(),
+			})
+			.noUnknown(),
+	},  
+	dislike: {
+		body: yup
+			.object({
+				post_id: yup.number().required(),
+			})
+			.noUnknown(),
+	},  
 };
 
 export default {

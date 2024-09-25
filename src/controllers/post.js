@@ -2,7 +2,6 @@ import BaseController from "./base";
 import { PostService } from "../services";
 
 class PostController extends BaseController {
-
   constructor() {
     super();
     this.postService = new PostService();
@@ -11,17 +10,20 @@ class PostController extends BaseController {
   async list(req, res) {
     const options = {
       meta: {
-        ...req.query
+        ...req.query,
       },
       filter: {
-        ...req.auth
-      }
+        ...req.filter,
+        logged_user_id: req.auth.id,
+      },
     };
 
-    try {
+    try {      
       const posts = await this.postService.list(options);
       return res.json(posts);
     } catch (error) {
+      console.log(error);
+      
       return this.errorHandler(error, req, res);
     }
   }
@@ -29,26 +31,24 @@ class PostController extends BaseController {
   async create(req, res) {
     try {
       const { id } = req.auth;
-      const { title, content } = req.body;
-  
+      const { title, content } = req.data;
+
       const newPost = await this.postService.create({ title, content, user_id: id });
       return res.status(201).json({ newPost });
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
   }
-  
 
   async update(req, res) {
     const options = {
       filter: {
         id: req.params.id,
-        logged_user_id: req.auth.id
+        logged_user_id: req.auth.id,
       },
       changes: {
-        title: req.body.title,
-        content: req.body.content
-      }
+        ...req.data,
+      },
     };
 
     try {
@@ -59,11 +59,11 @@ class PostController extends BaseController {
     }
   }
 
-  async delete(req, res) {  
+  async delete(req, res) {
     const options = {
       filter: {
-        id: req.params.id
-      }
+        id: req.params.id,
+      },
     };
 
     try {
@@ -75,9 +75,13 @@ class PostController extends BaseController {
   }
 
   async read(req, res) {
-    try {
-      const { id } = req.params;
-      const post = await this.postService.read({ id });
+      const filter =  {
+        logged_user_id: req.auth.id,
+        post_id: req.filter.id,
+      };
+    
+    try {      
+      const post = await this.postService.read(filter);
       if (!post) return res.status(404).json({ message: "Post not found" });
       return res.json(post);
     } catch (error) {
@@ -85,15 +89,15 @@ class PostController extends BaseController {
     }
   }
 
-  async like(req, res) {
+  async like(req, res) {  
     const options = {
       filter: {
-        post_id: req.body.post_id,
-        logged_user_id: req.auth.id
-      }
+        post_id: req.data.post_id,
+        logged_user_id: req.auth.id,
+      },
     };
-
-    try {
+    
+    try {      
       const post = await this.postService.like(options);
       return res.json(post);
     } catch (error) {
@@ -104,9 +108,9 @@ class PostController extends BaseController {
   async dislike(req, res) {
     const options = {
       filter: {
-        post_id: req.body.post_id,
-        logged_user_id: req.auth.id
-      }
+        post_id: req.data.post_id,
+        logged_user_id: req.auth.id,
+      },
     };
 
     try {

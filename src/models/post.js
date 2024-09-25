@@ -42,20 +42,25 @@ export default class Post extends BaseModel {
 			createdAt: 'created_at',
 			updatedAt: 'updated_at',
 			scopes: {
-				liked: id => ({
-					attributes: [
-						sequelize.literal(
-							`CASE WHEN (
-									SELECT 1
-									FROM post_likes
-									WHERE post_likes.post_id = post.id
-									AND post_likes.user_id = :user_id
-								) is not null THEN true ELSE false END`
-						), "total_likes",
-					],
-					replacements: { user_id: id }
+				withUserLike: id => ({
+				  attributes: [
+					[sequelize.literal(
+					  `CASE 
+						WHEN EXISTS (
+						  SELECT 1
+						  FROM "post_likes" as pl
+						  WHERE pl.post_id = "post"."id"
+						  AND pl.user_id = :user_id
+						  AND pl.is_deleted = false
+						) 
+						THEN true 
+						ELSE false 
+					  END`
+					), 'is_liked']
+				  ],
+				  replacements: { user_id: id }
 				})
-			}
+			}					  
 		});
 	}
 
