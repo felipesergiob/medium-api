@@ -58,14 +58,13 @@ class PostController extends BaseController {
   }
 
   async delete(req, res) {
-    const options = {
-      filter: {
-        id: req.params.id,
-      },
-    };
 
+    const filter = {
+      id: req.params.id,
+    }
+    
     try {
-      await this.postService.delete(options);
+      await this.postService.delete(filter);
       return res.status(204).send();
     } catch (error) {
       return this.errorHandler(error, req, res);
