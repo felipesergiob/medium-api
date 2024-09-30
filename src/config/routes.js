@@ -18,7 +18,6 @@ export default class Routes {
 		this.routes.use("/users", this.userRoutes.setup());
 		this.routes.use(
 			"/posts",
-			AuthMiddleware.isAuthorized,
 			this.postRoutes.setup()
 		);
 		this.routes.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));

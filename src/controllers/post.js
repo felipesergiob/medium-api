@@ -14,10 +14,13 @@ class PostController extends BaseController {
       },
       filter: {
         ...req.filter,
-        logged_user_id: req.auth.id,
       },
     };
-
+  
+    if (req.auth && req.auth.id) {
+      options.filter.logged_user_id = req.auth.id;
+    }
+    
     try {      
       const posts = await this.postService.list(options);
       return this.successHandler(posts, res);
