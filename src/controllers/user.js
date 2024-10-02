@@ -11,7 +11,11 @@ class UserController extends BaseController {
     try {
       const { name, email, password } = req.data;
       const newUser = await this.userService.create({ name, email, password });
-      return this.successHandler(newUser, res);
+      
+      const token = await this.userService.login({ email, password });
+      if (!token) return res.status(401).json({ message: "Authentication failed" });
+      
+      return this.successHandler({ user: newUser, token }, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
     }
