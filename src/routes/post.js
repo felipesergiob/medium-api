@@ -10,8 +10,8 @@ export default class PostRoutes extends BaseRoutes {
 	}
 
 	setup() {
-		this.router.get("/list", this.SchemaValidator.validate(PostSchema.list),this.postController.list.bind(this.postController));
 		this.router.use(AuthMiddleware.isAuthorized);
+		this.router.get("/list", this.SchemaValidator.validate(PostSchema.list),this.postController.list.bind(this.postController));
 		this.router.post("/create", this.SchemaValidator.validate(PostSchema.create),this.postController.create.bind(this.postController));
 		this.router.get("/read/:id", this.SchemaValidator.validate(PostSchema.get),this.postController.read.bind(this.postController));
 		this.router.put("/update/:id", this.SchemaValidator.validate(PostSchema.update),this.postController.update.bind(this.postController));
