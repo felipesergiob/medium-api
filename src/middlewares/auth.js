@@ -6,18 +6,23 @@ export default class AuthMiddleware {
             const errorResponse = {
                 status: "error",
                 code: 403,
-                message:
-                    "Sessão expirada. Logue novamente no sistema para obter acesso.",
+                message: "Sessão expirada. Logue novamente no sistema para obter acesso.",
             };
 
-            if (req.path === '/list' && AuthUtils.getBearerToken(req)) {
-                try {
-                    const decodedToken = AuthUtils.decodeData(AuthUtils.getBearerToken(req));
-                    req.auth = {
-                        id: decodedToken?.id,
-                    };
-                } catch (error) {
-                    console.warn('Invalid token on /list route, continuing without authentication');
+            // Check if the request is to '/list'
+            if (req.path === '/list') {
+                const token = AuthUtils.getBearerToken(req);
+
+                // If token exists, try to decode it
+                if (token) {
+                    try {
+                        const decodedToken = AuthUtils.decodeData(token);
+                        req.auth = {
+                            id: decodedToken?.id,
+                        };
+                    } catch (error) {
+                        console.warn('Invalid token on /list route, continuing without authentication');
+                    }
                 }
             } else {
                 const token = AuthUtils.getBearerToken(req);
@@ -38,8 +43,7 @@ export default class AuthMiddleware {
             res.status(403).json({
                 status: "error",
                 code: 403,
-                message:
-                    "Sessão expirada. Logue novamente no sistema para obter acesso.",
+                message: "Sessão expirada. Logue novamente no sistema para obter acesso.",
             });
         }
     }
