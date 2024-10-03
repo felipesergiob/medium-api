@@ -11,10 +11,10 @@ class UserController extends BaseController {
     try {
       const { name, email, password } = req.data;
       const newUser = await this.userService.create({ name, email, password });
-      
+
       const token = await this.userService.login({ email, password });
       if (!token) return res.status(401).json({ message: "Authentication failed" });
-      
+
       return this.successHandler({ user: newUser, token }, res);
     } catch (error) {
       return this.errorHandler(error, req, res);
@@ -64,7 +64,7 @@ class UserController extends BaseController {
 
   async delete(req, res) {
     try {
-      const id = req.params;
+      const { id } = req.auth;
       await this.userService.delete(id);
       return res.status(204).send();
     } catch (error) {
@@ -74,7 +74,7 @@ class UserController extends BaseController {
 
   async read(req, res) {
     try {
-      const { id } = req.params;
+      const { id } = req.auth;
       const user = await this.userService.read(id);
       if (!user) return res.status(404).json({ message: "User not found" });
       return this.successHandler(user, res);
