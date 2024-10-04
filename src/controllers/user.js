@@ -32,13 +32,13 @@ class UserController extends BaseController {
     }
   }
 
-  async update(req, res) {
+  async update(req, res) {    
     try {
       const { id } = req.auth;
       const { name, email } = req.data;
-      const updatedUser = await this.userService.update({ userId: id, changes: { name, email } });
+      const updatedUser = await this.userService.update({ filter: { id },  changes: { name, email } });
       return this.successHandler(updatedUser, res);
-    } catch (error) {
+    } catch (error) {      
       return this.errorHandler(error, req, res);
     }
   }
